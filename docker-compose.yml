@@ -1,0 +1,346 @@
+#
+# Copyright IBM Corp All Rights Reserved
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+version: '2'
+
+networks:
+  basic:
+
+services:
+  ca-base:
+    image: hyperledger/fabric-ca
+    environment: 
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_TLS_ENABLED=false
+    networks:
+      - basic
+# ORG1 CA
+  ca.org1.example.com:
+    extends:
+      service: ca-base
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.org1.example.com
+      # - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem
+      # - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/a9092b792cd19f0e4f7243c6cf46881b450e54f1ece42ef9b76881a8c4e54fb2_sk
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/3f989a0550c3022fc9369c55cdd1fff42176bef86f633024921cd81ccaebd35c_sk
+    ports:
+      - "17054:7054"
+    #command: sh -c 'fabric-ca-server start --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem --ca.keyfile /etc/hyperledger/fabric-ca-server-config/a9092b792cd19f0e4f7243c6cf46881b450e54f1ece42ef9b76881a8c4e54fb2_sk -b admin:ry3XQB@Tk\& -d'
+    command: sh -c 'fabric-ca-server start -b admin:ry3XQB@Tk\& -d'
+    volumes:
+      - ./crypto-config/peerOrganizations/org1.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca.org1.example.com
+
+# ORG2 CA
+  ca.org2.example.com:
+    extends:
+      service: ca-base
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.org2.example.com
+      # - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem
+      # - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/bc029cdb00fbb2a6fb077cfbe9597e20871093df04dbfdad5daf6bbc14d84d1d_sk
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/1c3b4364dd78acab091ba37dc6f68d0942cb98e01e3368d29489829689e0d18f_sk
+    ports:
+      - "27054:7054"
+    #command: sh -c 'fabric-ca-server start --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem --ca.keyfile /etc/hyperledger/fabric-ca-server-config/bc029cdb00fbb2a6fb077cfbe9597e20871093df04dbfdad5daf6bbc14d84d1d_sk -b admin:ry3XQB@Tk\& -d'
+    command: sh -c 'fabric-ca-server start -b admin:ry3XQB@Tk\& -d'
+    volumes:
+      - ./crypto-config/peerOrganizations/org2.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca.org2.example.com
+
+# ORG3 CA  
+  ca.org3.example.com:
+    extends:
+      service: ca-base
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.org3.example.com
+      # - FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org3.example.com-cert.pem
+      # - FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/e99c00e5be98ce14eb014a9b01c97a8e7d416538158afdfac39232c7ff49322a_sk
+      
+
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org3.example.com-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/3c34ec624528a35df72cef8c0b66aeb1cbfcc1f6ddea0a7d161dfc547bf4a0c9_sk
+    ports:
+      - "37054:7054"
+    #command: sh -c 'fabric-ca-server start --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.org3.example.com-cert.pem --ca.keyfile /etc/hyperledger/fabric-ca-server-config/e99c00e5be98ce14eb014a9b01c97a8e7d416538158afdfac39232c7ff49322a_sk -b admin:ry3XQB@Tk\& -d'
+    command: sh -c 'fabric-ca-server start -b admin:ry3XQB@Tk\& -d'
+    volumes:
+      - ./crypto-config/peerOrganizations/org3.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+
+    container_name: ca.org3.example.com
+
+  orderer.example.com:
+    container_name: orderer.example.com
+    image: hyperledger/fabric-orderer
+    environment:
+      - FABRIC_LOGGING_SPEC=info
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/configtx/genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp/orderer/msp
+      # Enable TLS
+      - ORDERER_GENERAL_TLS_ENABLED=false
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/etc/hyperledger/msp/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/etc/hyperledger/msp/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/etc/hyperledger/msp/orderer/tls/ca.crt]
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer
+    command: orderer
+    ports:
+      - 7050:7050
+    volumes:
+        - ./config/:/etc/hyperledger/configtx
+        - ./crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/:/etc/hyperledger/msp/orderer
+        - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/:/etc/hyperledger/msp/peerOrg1
+    networks:
+      - basic
+
+  peer-base:
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=info
+      - CORE_CHAINCODE_LOGGING_LEVEL=info
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
+      - CORE_PEER_GOSSIP_USELEADERELECTION=true
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      - CORE_PEER_PROFILE_ENABLED=true
+      # Enable TLS
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./config:/etc/hyperledger/configtx
+    networks:
+      - basic
+      
+  peer0.org1.example.com:
+    extends:
+      service: peer-base
+    container_name: peer0.org1.example.com
+    environment:
+      - CORE_PEER_ID=peer0.org1.example.com
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      # # the following setting starts chaincode containers on the same
+      # # bridge network as the peers
+      # # https://docs.docker.com/compose/networking/
+      # - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      # - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb:5984
+      # The CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME and CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD
+      # provide the credentials for ledger to connect to CouchDB.  The username and password must
+      # match the username and password set for the associated CouchDB.
+      # - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      # - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    # command: peer node start --peer-chaincodedev=true
+    ports:
+      - 7051:7051
+      - 7053:7053
+    volumes:
+        - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org1.example.com/users:/etc/hyperledger/msp/users
+        - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/etc/hyperledger/fabric/tls
+       
+    depends_on:
+      - orderer.example.com
+      # - couchdb
+  
+  peer1.org1.example.com:
+    extends:
+      service: peer-base
+    container_name: peer1.org1.example.com
+    environment:
+      - CORE_PEER_ID=peer1.org1.example.com
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.example.com/msp
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
+      - CORE_PEER_ADDRESS=peer1.org1.example.com:7051
+    ports:
+      - 8051:7051
+      - 8053:7053
+    volumes:
+        - ./crypto-config/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org1.example.com/users:/etc/hyperledger/msp/users
+        - ./crypto-config/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls:/etc/hyperledger/fabric/tls
+    depends_on:
+      - orderer.example.com
+
+  peer0.org2.example.com:
+    extends:
+      service: peer-base
+    container_name: peer0.org2.example.com
+    environment:
+      - CORE_PEER_ID=peer0.org2.example.com
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org2.example.com/msp
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org2.example.com:7051
+    ports:
+      - 27051:7051
+      - 27053:7053
+    volumes:
+        - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org2.example.com/users:/etc/hyperledger/msp/users
+        - ./crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls:/etc/hyperledger/fabric/tls
+    depends_on:
+      - orderer.example.com
+  
+  peer0.org3.example.com:
+    extends:
+      service: peer-base
+    container_name: peer0.org3.example.com
+    environment:
+      - CORE_PEER_ID=peer0.org3.example.com
+      - CORE_PEER_LOCALMSPID=Org3MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org3.example.com/msp
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org3.example.com:7051
+      - CORE_PEER_ADDRESS=peer0.org3.example.com:7051
+    ports:
+      - 37051:7051
+      - 37053:7053
+    volumes:
+        - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org3.example.com/users:/etc/hyperledger/msp/users
+        - ./crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls:/etc/hyperledger/fabric/tls
+    depends_on:
+      - orderer.example.com
+
+  couchdb:
+    container_name: couchdb
+    image: hyperledger/fabric-couchdb
+    # Populate the COUCHDB_USER and COUCHDB_PASSWORD to set an admin user and password
+    # for CouchDB.  This will prevent CouchDB from operating in an "Admin Party" mode.
+    environment:
+      - COUCHDB_USER=
+      - COUCHDB_PASSWORD=
+    ports:
+      - 5984:5984
+    networks:
+      - basic
+
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=info
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+      - CORE_CHAINCODE_KEEPALIVE=10
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./../chaincode/:/opt/gopath/src/github.com/
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+    networks:
+        - basic
+    #depends_on:
+    #  - orderer.example.com
+    #  - peer0.org1.example.com
+    #  - couchdb
+
+  cli_org1:
+    container_name: cli_org1
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=info
+      - CORE_PEER_ID=cli_org1
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+      - CORE_CHAINCODE_KEEPALIVE=10
+      # Enable TLS
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+      
+    working_dir: /etc/hyperledger/configtx
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./config/:/etc/hyperledger/configtx
+        - ./crypto-config:/etc/hyperledger/crypto-config
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+        - ./../chaincode/:/opt/gopath/src/github.com/chaincode
+    networks:
+      - basic
+
+  cli_org2:
+    container_name: cli_org2
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=info
+      - CORE_PEER_ID=cli_org2
+      - CORE_PEER_ADDRESS=peer0.org2.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
+      - CORE_CHAINCODE_KEEPALIVE=10
+      # Enable TLS
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+    working_dir: /etc/hyperledger/configtx
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./config/:/etc/hyperledger/configtx
+        - ./crypto-config:/etc/hyperledger/crypto-config
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+        - ./../chaincode/:/opt/gopath/src/github.com/chaincode
+    networks:
+      - basic
+
+  cli_org3:
+    container_name: cli_org3
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=info
+      - CORE_PEER_ID=cli_org3
+      - CORE_PEER_ADDRESS=peer0.org3.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org3MSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp
+      - CORE_CHAINCODE_KEEPALIVE=10
+      # Enable TLS
+      - CORE_PEER_TLS_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt
+    working_dir: /etc/hyperledger/configtx
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./config/:/etc/hyperledger/configtx
+        - ./crypto-config:/etc/hyperledger/crypto-config
+        - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+        - ./../chaincode/:/opt/gopath/src/github.com/chaincode
+    networks:
+      - basic
